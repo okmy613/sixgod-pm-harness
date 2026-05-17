@@ -94,13 +94,9 @@ project/
     │   └── YYYY-MM-DD-<topic>.md
     ├── FEEDBACK-INDEX.md        # 索引 + 快速加载
     ├── hooks/
-    │   ├── pre-commit-check.sh  # 编译不过阻止提交
-    │   ├── auto-push.sh         # commit 后自动推送
-    │   ├── stop-gate.sh         # 代码未审查不让停
-    │   ├── detect-feedback-signal.sh  # 自动捕捉修正信号
-    │   ├── mark-review-needed.sh      # 代码变更标记待审查
-    │   ├── prompt-check.sh            # 提示词完整性检查
-    │   └── check-evolution.sh         # session 启动检查 feedback
+    │   ├── pre-commit-check.sh  # 编译不过阻止提交（git pre-commit hook）
+    │   ├── post-commit-push.sh  # commit 后自动推送（git post-commit hook）
+    │   └── pre-tool-use-check.sh # 自动安装 git hooks + 标记变更待审查（Claude Code PreToolUse）
     └── skills/
         ├── product-spec-builder/
         ├── design-brief-builder/
@@ -140,7 +136,31 @@ pre-commit-check 每次 commit 前自动跑编译检查。编译不过，commit 
 - 第三层：Skill 优化 —— 某 Skill 评分持续偏低，系统提议优化
 - 第四层：新 Skill 诞生 —— 反复出现但无 Skill 覆盖的操作模式，提议创建新 Skill
 
-### 6. 跨 Session 接续
+### 6. 停止检查（Stop-Gate）
+以下情况不允许停止或切换阶段，必须完成才能继续：
+- 代码已变更但尚未完成 code review → 必须先审查
+- 编译未通过 → 必须先修复
+- 当前 Task 的验收标准未全部通过 → 必须先完成
+
+触发时机：每个 Task 完成后、Agent 准备停止时、阶段切换前。
+
+### 7. 反馈信号检测
+每次收到用户消息后，检查是否包含以下信号：
+
+**修正类：**"你搞错了"、"不是这样"、"不对"、"纠正一下"、"重新来"
+**不满类：**"不好"、"不满意"、"太差了"、"不行"
+**偏好类：**"我喜欢..."、"不要..."、"换成..."、"用...代替"
+
+检测到信号 → 自动触发 feedback-observer 记录结构化反馈。
+
+### 8. 进化检查
+每次 session 启动时（项目进度检测之后）：
+- 检查 `.claude/feedback/` 是否有新积累
+- 检查是否有同类反馈 ≥3 次（可毕业为规则）
+- 检查是否有待处理的进化建议
+- 如有则向用户展示，等待确认后再执行
+
+### 9. 跨 Session 接续
 - 每个 Phase 开始时必须重新读取 Product-Spec、Design-Brief、DEV-PLAN
 - DEV-PLAN 是跨 session 接续开发的进度锚点
 - 上下文一长记忆会被挤掉，重读文档是强制习惯
