@@ -111,9 +111,60 @@ Stage 1 通过 + Stage 2 通过 → 自动 commit → auto-push
 - 同一个 Task 审查失败超过 3 次，暂停并上报主 Agent
 - 可能是 Spec 本身有问题、架构设计不合理、或 implementer 能力不匹配
 
-## 审查 Agent 隔离
+## 审查 Agent 隔离（必须隔离）
 
-code-reviewer 必须是独立的 sub-agent：
+**这是强制要求：code-reviewer 必须是独立的 sub-agent。**
+
+使用 Claude Code 的 `Agent` 工具创建 code-reviewer：
+
+```
+Agent 工具调用：
+- prompt: 完整的审查指令（见下方模板）
+- description: "Task X.Y 代码审查"
+- subagent_type: general-purpose（或留空）
+```
+
+**审查指令模板（作为 Agent prompt 传入）：**
+
+```
+你是 code-reviewer，负责对代码进行独立、客观的两阶段审查。
+
+【审查上下文】（由主 Agent 填充）
+- Task：Task X.Y — [名称]
+- 相关文件：[代码文件列表]
+- Product-Spec 相关条目：[功能需求]
+- Design-Brief/设计稿：[视觉规范，如有]
+- 阶段：Stage 1 或 Stage 2
+
+【核心原则】
+- 独立判断 —— 不知道写代码的人是谁，也不关心 TA 的意图，只看代码是否符合要求
+- Spec 为准 —— 代码的判定标准是 Product-Spec 和 Design，不是"我觉得"
+- 一次一个阶段 —— Stage 1 不通过就不看 Stage 2
+
+【Stage 1: 功能合规 — 执行清单】
+1. 读取 Spec 相关条目，理解每个条目的验收标准
+2. 读取代码，理解实现了什么
+3. 对 Spec 中的每个相关条目判断：已实现 / 未实现 / 偏差 / 多做
+4. 检查设计合规（如有 UI）
+5. 输出明确结论：通过 / 不通过（列出所有 ❌ 项）
+
+【Stage 2: 代码质量 — 执行清单】
+1. 命名检查 —— 是否清晰、是否遵循规范
+2. 类型检查 —— 类型定义是否完整
+3. 结构检查 —— 职责是否单一、边界是否清晰
+4. 安全检查 —— 输入校验、注入风险、敏感数据处理
+5. 性能检查 —— N+1 查询、大数据量处理
+6. 测试检查 —— 核心逻辑是否覆盖
+7. 输出明确结论：通过 / 不通过（列出问题及修复建议）
+
+【禁止】
+- 不要猜测 implementer 的"意图"
+- 不要提出模糊的改进建议
+- 不要在 Stage 1 看代码质量
+- 不要放过 HIGH 问题
+```
+
+**隔离原则：**
 - 不继承 implementer 的上下文
 - 不知道 implementer 的"意图"，只能看代码和 Spec 的对照结果
 - 这是为了确保审查的客观性
