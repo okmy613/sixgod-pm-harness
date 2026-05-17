@@ -98,14 +98,29 @@ Implementer 返回代码后：
 - 编译失败 → 把错误信息返回给 implementer，要求修复
 - 编译通过 → 进入下一步
 
-### 5. 更新进度
+### 5. Stop-Gate 检查
 
-Task 完成后：
+**这是强制要求：Task 完成后必须通过 stop-gate 检查，否则不能进入下一步。**
+
+检查清单（全部通过才能继续）：
+1. [ ] 编译是否通过？
+2. [ ] 当前 Task 的验收标准是否全部通过？
+3. [ ] 代码是否已变更？如果已变更，是否已标记为待审查？
+4. [ ] 是否有遗漏的实现或未处理的错误？
+
+**未通过处理：**
+- 编译未通过 → 把错误信息返回给 implementer，要求修复后重新 stop-gate 检查
+- 验收标准未通过 → 对照 Spec 确认遗漏项，返回 implementer 补实现
+- 代码已变更但未标记 review → 确保变更已被记录（pre-tool-use-check 通常已处理）
+
+### 6. 更新进度
+
+Stop-Gate 通过后：
 - 在 DEV-PLAN.md 中标记该 Task 为已完成
 - 自动触发 code-review（派发 code-reviewer sub-agent）
 - 询问用户是否继续下一 Task
 
-### 6. Phase 结束检查
+### 7. Phase 结束检查
 
 一个 Phase 的所有 Task 完成后：
 - 运行 Phase 级集成验证（跨 Task 的编译 + 功能测试）

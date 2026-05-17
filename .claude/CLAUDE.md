@@ -62,8 +62,8 @@
 |-------|------|----------|
 | **implementer** | 编码实现 + 编译验证 + 自检 | dev-builder 阶段，每个 Task 派发 |
 | **code-reviewer** | 两阶段审查（Spec 合规 + 代码质量） | 每个 Task 完成后、Phase 结束时 |
-| **feedback-observer** | 捕捉用户反馈信号，写入 feedback 文件 | 检测到用户修正/不满时 |
-| **evolution-runner** | 扫描 feedback 积累，生成进化建议 | session 启动时检查 |
+| **feedback-observer** | 捕捉用户反馈信号，写入 feedback 文件 | 用户消息包含修正/不满/偏好信号时，由主 Agent 用 `Agent` 工具派发 |
+| **evolution-runner** | 扫描 feedback 积累，生成进化建议 | 每次 session 启动后，由主 Agent 用 `Agent` 工具派发，静默执行，有建议时才提示用户 |
 
 **隔离原则：**
 - 每个 Sub-Agent 的任务包里包含完整上下文（Spec 条目、交付清单、涉及文件、项目结构）
@@ -144,21 +144,78 @@ pre-commit-check 每次 commit 前自动跑编译检查。编译不过，commit 
 
 触发时机：每个 Task 完成后、Agent 准备停止时、阶段切换前。
 
-### 7. 反馈信号检测
-每次收到用户消息后，检查是否包含以下信号：
+### 7. 反馈信号检测与触发
 
-**修正类：**"你搞错了"、"不是这样"、"不对"、"纠正一下"、"重新来"
-**不满类：**"不好"、"不满意"、"太差了"、"不行"
-**偏好类：**"我喜欢..."、"不要..."、"换成..."、"用...代替"
+每次收到用户消息后，主 Agent 先检查是否包含以下信号：
 
-检测到信号 → 自动触发 feedback-observer 记录结构化反馈。
+**修正类：**"你搞错了"、"不是这样"、"不对"、"纠正一下"、"重新来"、"错了"、"改一下"
+**不满类：**"不好"、"不满意"、"太差了"、"不行"、"不合适"、"不喜欢"
+**偏好类：**"我喜欢..."、"不要..."、"换成..."、"用...代替"、"改成..."、"最好是..."
 
-### 8. 进化检查
-每次 session 启动时（项目进度检测之后）：
-- 检查 `.claude/feedback/` 是否有新积累
-- 检查是否有同类反馈 ≥3 次（可毕业为规则）
-- 检查是否有待处理的进化建议
-- 如有则向用户展示，等待确认后再执行
+**触发方式：**
+
+检测到信号时，主 Agent 使用 `Agent` 工具派发 feedback-observer：
+
+```
+Agent 工具调用：
+- prompt: feedback-observer 任务指令（包含用户原始消息、当前上下文）
+- description: "记录用户反馈"
+- subagent_type: general-purpose
+```
+
+feedback-observer 的职责：
+- 分析用户消息中的具体修正/不满/偏好
+- 结构化记录到 `.claude/feedback/YYYY-MM-DD-<topic>.md`
+- 更新 `.claude/FEEDBACK-INDEX.md`
+- 反馈内容不包含情绪判断，只记录客观事实
+
+**用户体验：**
+- 记录过程静默执行，不打扰用户
+- 用户明确说"记下来"时也要触发
+- 同一次对话中多次信号只记录一次（去重）
+
+### 8. 进化检查与触发
+
+每次 session 启动时（项目进度检测之后、进入主流程之前）：
+
+**检查内容：**
+1. 读取 `.claude/feedback/` 目录下的所有 feedback 文件
+2. 读取 `.claude/FEEDBACK-INDEX.md` 了解历史积累
+3. 统计同类反馈出现次数（按涉及 Skill/Agent 归类）
+4. 检查是否有 ≥3 次的同类反馈（可毕业为规则）
+5. 检查是否有待处理的进化建议
+
+**触发方式：**
+
+使用 `Agent` 工具派发 evolution-runner：
+
+```
+Agent 工具调用：
+- prompt: evolution-runner 任务指令（包含 feedback 文件路径列表）
+- description: "扫描 feedback 进化"
+- subagent_type: general-purpose
+```
+
+evolution-runner 的职责：
+- 扫描所有 feedback 文件，统计归类
+- 按四层进化路径分析：
+  - 第一层：静默记录（已完成）
+  - 第二层：≥3 次同类反馈 → 生成规则毕业建议
+  - 第三层：某 Skill 评分持续偏低 → 生成优化建议
+  - 第四层：重复操作模式无 Skill 覆盖 → 生成新 Skill 建议
+- 输出进化建议报告
+- **只提议，不自动执行**
+
+**用户体验：**
+- 扫描过程静默执行
+- 有具体建议时才向用户展示
+- 每条建议需用户确认（"是/否"）才会执行
+- 绝不自动修改 Skill 或 CLAUDE.md
+
+**确认后执行：**
+- 用户确认后，主 Agent 调用 skill-builder skill 或直接修改对应文件
+- 更新 FEEDBACK-INDEX.md 标记已处理的反馈
+- 向用户确认修改结果
 
 ### 9. 跨 Session 接续
 - 每个 Phase 开始时必须重新读取 Product-Spec、Design-Brief、DEV-PLAN
