@@ -1,0 +1,57 @@
+{
+  "project": {
+    "name": "六神产品助理",
+    "version": "1.0.0"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-tool-use-check.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-commit-push.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "agents": {
+    "implementer": {
+      "skill": ".claude/agents/implementer.md"
+    },
+    "code-reviewer": {
+      "skill": ".claude/agents/code-reviewer.md"
+    },
+    "feedback-observer": {
+      "skill": ".claude/agents/feedback-observer.md"
+    },
+    "evolution-runner": {
+      "skill": ".claude/agents/evolution-runner.md"
+    }
+  },
+  "skills": {
+    "product-spec-builder": ".claude/skills/product-spec-builder/",
+    "design-brief-builder": ".claude/skills/design-brief-builder/",
+    "design-maker": ".claude/skills/design-maker/",
+    "dev-planner": ".claude/skills/dev-planner/",
+    "dev-builder": ".claude/skills/dev-builder/",
+    "bug-fixer": ".claude/skills/bug-fixer/",
+    "code-review": ".claude/skills/code-review/",
+    "release-builder": ".claude/skills/release-builder/",
+    "skill-builder": ".claude/skills/skill-builder/",
+    "feedback-writer": ".claude/skills/feedback-writer/",
+    "evolution-engine": ".claude/skills/evolution-engine/"
+  }
+}
