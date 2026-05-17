@@ -7,16 +7,29 @@ set -e
 
 echo "📝 PreToolUse 检查..."
 
-# ============ 自动安装 git pre-commit hook ============
-# 如果项目有 .git 目录但缺少 pre-commit hook，自动从模板安装
-GIT_HOOK=".git/hooks/pre-commit"
-SOURCE_HOOK=".claude/hooks/pre-commit-check.sh"
+# ============ 自动安装 git hooks ============
+# 如果项目有 .git 目录但缺少 hook，自动从模板安装
 
-if [ -d ".git" ] && [ ! -f "$GIT_HOOK" ] && [ -f "$SOURCE_HOOK" ]; then
+# 安装 pre-commit hook（编译检查）
+PRE_COMMIT_HOOK=".git/hooks/pre-commit"
+PRE_COMMIT_SOURCE=".claude/hooks/pre-commit-check.sh"
+
+if [ -d ".git" ] && [ ! -f "$PRE_COMMIT_HOOK" ] && [ -f "$PRE_COMMIT_SOURCE" ]; then
     echo "🔧 自动安装 git pre-commit hook..."
-    cp "$SOURCE_HOOK" "$GIT_HOOK"
-    chmod +x "$GIT_HOOK"
+    cp "$PRE_COMMIT_SOURCE" "$PRE_COMMIT_HOOK"
+    chmod +x "$PRE_COMMIT_HOOK"
     echo "✅ git pre-commit hook 已自动安装"
+fi
+
+# 安装 post-commit hook（自动推送）
+POST_COMMIT_HOOK=".git/hooks/post-commit"
+POST_COMMIT_SOURCE=".claude/hooks/post-commit-push.sh"
+
+if [ -d ".git" ] && [ ! -f "$POST_COMMIT_HOOK" ] && [ -f "$POST_COMMIT_SOURCE" ]; then
+    echo "🔧 自动安装 git post-commit hook..."
+    cp "$POST_COMMIT_SOURCE" "$POST_COMMIT_HOOK"
+    chmod +x "$POST_COMMIT_HOOK"
+    echo "✅ git post-commit hook 已自动安装"
 fi
 # =====================================================
 
