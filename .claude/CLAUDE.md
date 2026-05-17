@@ -32,7 +32,7 @@
 ```
 阶段 1: 需求收集 → 调用 product-spec-builder → 生成 Product-Spec.md
 阶段 2: 设计规范 → 调用 design-brief-builder → 生成 Design-Brief.md（可选）
-阶段 3: 设计图   → 调用 design-maker → 生成完整设计图（可选，需先完成 Design Brief）
+阶段 3: 设计图   → 调用 design-maker → 通过 Pencil MCP 生成完整设计图（可选，需先完成 Design Brief）
 阶段 4: 开发计划 → 调用 dev-planner → 读取 Product-Spec + Design-Brief → 生成 DEV-PLAN.md
 阶段 5: 项目开发 → 调用 dev-builder → 按 DEV-PLAN 逐 Task 实现代码 + 编译验证
 阶段 6: Bug 修复 → 调用 bug-fixer → 四阶段系统性调试（按需）
