@@ -17,7 +17,7 @@ CHANGED_FILES=$(git diff --name-only HEAD 2>/dev/null || echo "")
 STAGED_FILES=$(git diff --cached --name-only 2>/dev/null || echo "")
 
 # 合并并去重
-ALL_CHANGES=$(echo -e "$CHANGED_FILES\n$STAGED_FILES" | sort -u | grep -v '^$')
+ALL_CHANGES=$(echo -e "$CHANGED_FILES\n$STAGED_FILES" | sort -u | grep -v '^$' || true)
 
 if [ -z "$ALL_CHANGES" ]; then
     echo "ℹ️ 没有检测到代码变更"
